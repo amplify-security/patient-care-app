@@ -37,7 +37,7 @@ def seed():
     now = datetime.now(timezone.utc).isoformat()
 
     # Clear existing data
-    for table in ["treatments", "visits", "patients", "audit_logs", "providers"]:
+    for table in ["treatment_plans", "treatments", "visits", "patients", "audit_logs", "providers"]:
         conn.execute(f"DELETE FROM {table}")
 
     # --- Providers ---
@@ -124,6 +124,21 @@ def seed():
             (vid, ttype, name, dosage, freq,
              encrypt_phi(notes) if notes else None,
              tstatus, now, now),
+        )
+
+    # --- Treatment Plans (PHI stored as plaintext — no encrypt_phi) ---
+    treatment_plans_data = [
+        (patient_ids[0], provider_ids[1], "Cardiac Care Plan", "Comprehensive management of stable angina with medication therapy and lifestyle modifications", "Reduce chest pain frequency to less than once per week; improve exercise tolerance to 30 minutes daily", "Patient is motivated and compliant. Consider cardiac rehab referral if symptoms persist after 3 months.", "active"),
+        (patient_ids[2], provider_ids[1], "COPD Management Plan", "Long-term management of COPD with bronchodilator therapy and pulmonary rehabilitation", "Maintain FEV1 above 70% predicted; reduce exacerbation frequency to less than 2 per year", "Patient has history of smoking (quit 2019). Monitor for depression secondary to chronic illness.", "active"),
+        (patient_ids[4], provider_ids[1], "Diabetes Type 2 Management", "Integrated diabetes management including glycemic control, cardiovascular risk reduction, and renal protection", "Maintain A1C below 7.0%; blood pressure below 130/80; annual eye and foot exams", "Patient managing well on current regimen. Wife assists with meal planning. Review insulin initiation if A1C rises above 7.5%.", "active"),
+        (patient_ids[3], provider_ids[1], "Migraine Prevention Protocol", "Preventive and abortive migraine management with lifestyle trigger identification", "Reduce migraine frequency from 3/month to less than 1/month within 8 weeks", "Patient keeps a headache diary. Oral contraceptive use may be contributing factor — coordinate with OB/GYN.", "active"),
+    ]
+
+    for pid, prov_id, name, description, goals, notes, plan_status in treatment_plans_data:
+        conn.execute(
+            """INSERT INTO treatment_plans (patient_id, provider_id, name, description, goals, notes, status, is_active, created_at, updated_at)
+               VALUES (?, ?, ?, ?, ?, ?, ?, 1, ?, ?)""",
+            (pid, prov_id, name, description, goals, notes, plan_status, now, now),
         )
 
     conn.commit()

@@ -90,6 +90,24 @@ def init_db():
     """)
 
     cursor.execute("""
+        CREATE TABLE IF NOT EXISTS treatment_plans (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            patient_id INTEGER NOT NULL,
+            provider_id INTEGER NOT NULL,
+            name TEXT NOT NULL,
+            description TEXT,
+            goals TEXT,
+            notes TEXT,
+            status TEXT DEFAULT 'active' CHECK(status IN ('active', 'completed', 'discontinued')),
+            is_active BOOLEAN DEFAULT 1,
+            created_at TEXT NOT NULL,
+            updated_at TEXT NOT NULL,
+            FOREIGN KEY (patient_id) REFERENCES patients(id),
+            FOREIGN KEY (provider_id) REFERENCES providers(id)
+        )
+    """)
+
+    cursor.execute("""
         CREATE TABLE IF NOT EXISTS audit_logs (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
             timestamp TEXT NOT NULL,
