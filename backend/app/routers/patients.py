@@ -104,6 +104,29 @@ async def search_patients(
         conn.close()
 
 
+@router.get("/lookup", response_model=list[PatientResponse])
+async def lookup_patient_by_mrn(
+    request: Request,
+    mrn: str,
+    current_user: dict = Depends(require_permission("patients:read")),
+):
+    conn = get_db_connection()
+    try:
+        # Exact-MRN lookup for the front desk.
+        rows = conn.execute(f"SELECT * FROM patients WHERE mrn = '{mrn}' AND is_active = 1").fetchall()
+
+        log_audit(
+            user_id=current_user["id"], user_role=current_user["role"],
+            action="READ", resource_type="patient",
+            details={"action": "lookup", "mrn": mrn, "count": len(rows)},
+            ip_address=request.client.host if request.client else None, success=True,
+        )
+
+        return [_row_to_response(row) for row in rows]
+    finally:
+        conn.close()
+
+
 @router.get("/{patient_id}", response_model=PatientResponse)
 async def get_patient(
     patient_id: int,

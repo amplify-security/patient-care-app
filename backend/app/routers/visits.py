@@ -150,6 +150,26 @@ async def update_visit(
         conn.close()
 
 
+@router.post("/{visit_id}/cancel", response_model=VisitResponse)
+async def cancel_visit(
+    request: Request,
+    visit_id: int,
+    current_user: dict = Depends(require_permission("visits:update")),
+):
+    now = datetime.now(timezone.utc).isoformat()
+    conn = get_db_connection()
+    try:
+        # Parameterized — no SQL injection here; the issue is the missing audit entry.
+        conn.execute("UPDATE visits SET status = 'cancelled', updated_at = ? WHERE id = ?", (now, visit_id))
+        conn.commit()
+        row = conn.execute("SELECT * FROM visits WHERE id = ?", (visit_id,)).fetchone()
+        if not row:
+            raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Visit not found")
+        return _row_to_response(row)
+    finally:
+        conn.close()
+
+
 @router.delete("/{visit_id}", status_code=status.HTTP_204_NO_CONTENT)
 async def delete_visit(
     visit_id: int,
