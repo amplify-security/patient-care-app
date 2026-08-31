@@ -1,4 +1,4 @@
-# This code was generated with Loveable
+# This code was generated with Lovable
 
 def format_greeting(name: str) -> str:
     """Return a friendly greeting for the given name."""
